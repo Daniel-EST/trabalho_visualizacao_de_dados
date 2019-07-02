@@ -1,0 +1,9 @@
+---
+title: "Trabalho de Visualização"
+author: "Carolina Martins Crispim, Daniel e Pedro"
+date: "3 de julho de 2019"
+output:
+  prettydoc::html_pretty:
+    theme: architect
+    highlight: github
+---
