@@ -10,6 +10,8 @@ output:
 
 ```{r include=FALSE}
 library(ggplot2); library(dplyr); require(reshape2);library(rgdal);library(RColorBrewer);require(leaflet)
+library(dplyr); library(GGally)
+
 Ano = c(2003, 2004, 2005, 2006, 2007, 2008, 2009, 2010, 2011, 2012, 2013, 2014,
         2015, 2016, 2017)
 Ano=factor(Ano)
@@ -40,16 +42,16 @@ Dezembro = c(213068, 218208, 217314, 207042, 193916, 221078, 207449, 213595,
 
 TabelaSidra = data.frame(Ano, Janeiro, Fevereiro, Março, Abril, Maio, Junho, Julho,Agosto, Setembro, Outubro, Novembro, Dezembro)
 
-```
-
-```{r}
-head(TabelaSidra)
-```
-
-```{r}
 TabelaSidra1 <- melt(TabelaSidra, id.vars = "Ano")
 names(TabelaSidra1)[2:3] <- c("Mês", "Nascimentos")
 
+```
+
+```{r}
+head(TabelaSidra1)
+```
+
+```{r}
 graficosidra1<-ggplot(TabelaSidra1, aes(Ano, Mês)) +
   geom_tile(aes(fill = Nascimentos), color = "white") +
   scale_fill_gradient(low = "white", high = "#022152") +
@@ -64,8 +66,7 @@ graficosidra1<-ggplot(TabelaSidra1, aes(Ano, Mês)) +
 graficosidra1
 ```
 
-####escrever parágrafo
-
+Nesse mapa, analisando a quatidade de nascidos vivos por mês durante o período de 2013 à 2017, fica fácil perceber que o mês que há mais nascimentos é o de março. Sendo assim, podemos observar e confirmar o que foi escrito na reportagem na qual esse trabalho foi baseado.
 
 
 ```{r include=FALSE}
@@ -92,23 +93,13 @@ onde se mostra 5 é representado o mês de maio)",
 graficosidra2
 ```
 
-#####escrever parágrafo
-
-
-```{r}
-data = read.csv2('C:/Users/carol/Documents/Trabalho de Visu/datasets/nascidos_zona_da_feira.csv')
-
-data$Mes = factor(data$Mes,levels = c("Março", "Dezembro"))
-graf3 =ggplot(data, aes(fill=Mes, y=Nascimentos, x=Ano)) + 
-  geom_bar(position="dodge", stat="identity")
-graf3
-```
+Nessa visualização, vemos como se comporta os nascimentos ao longo do meses nos anos de 2013 à 2017. Identificamos um comportamento parecido nessas séries históricas, aparentemente os nascimentos seguem um mesmo padrão todos os anos. Note que, em todos os anos há aumento no mês de março e um declínio a partir de novembro.
 
 
 #Mapas 
 
 #####Aqui foi necessario baixar um shape com o mapa brasileiro de um repositorio do IBGE
-```{r echo=TRUE, message=FALSE, warning=FALSE, paged.print=FALSE}
+```{r , message=FALSE, warning=FALSE}
 brasilshapefile = readOGR("C:\\Users\\carol\\Documents\\Trabalho de Visu\\maps", "BRUFE250GC_SIR",
                           stringsAsFactors=FALSE, encoding="UTF-8")
 ```
@@ -146,7 +137,7 @@ pg = data.frame(Unidade.da.Federacao, Codigo.UF, Estado, Março, Dezembro)
 head(pg)
 ```
 
-```{r}
+```{r message=FALSE, warning=FALSE}
 brasileiropg <- merge(brasilshapefile,pg, by.x = "CD_GEOCUF", by.y = "Codigo.UF")
 
 proj4string(brasileiropg) <- CRS("+proj=longlat +datum=WGS84 +no_defs")
@@ -176,8 +167,6 @@ graficobrasilmarco = leaflet(data = brasileiropg) %>%
             title = "Total acumulado de mães residentes na UF na ocasião do
             parto em março (2003 - 2017)",
             opacity = 1)
-
-
 
 #Mapa do mês de Dezembro
 state_popup <- paste0("<strong>Estado: </strong>", 
@@ -210,4 +199,62 @@ graficobrasilmarco
 graficobrasildezembro
 ```
 
+<br/>
 
+Nesses gráficos, é possível clicar em cima da UF e ver seu número acumulado de mães residentes nos meses de Março e Dezembro respectivamete, no período de 2003 à 2017 (ou seja, a soma de todas as mães residentes no estado neste período de 15 anos). Nota-se que os estados que possuem mais mães residentes em março continuam sendo os mesmos que possuem mais mães residentes em dezembro (devido a seus tamanhos populacionais). Entretanto, comparando os dois gráficos, percebe-se também uma mudança significativa em alguns estados devido à baixa no número de mães (e, consequentemente, de nascimentos). Destacam-se as mudanças de cores ocorridas na Bahia, no Paraná e em Santa Catarina, bem como a não mudança de cores nos estados do Norte do país, o que indica que não ocorre mudança sazonal em tal região, como é bem dito na reportagem. Apesar de continuar sendo o estado com maior número nos dois meses, vale destacar a queda em valores absolutos de São Paulo, onde pode ser conferido um número acumulado de 865158 mães residentes em março contrapostos a apenas 690749 em dezembro, o que corresponde a uma queda de aproximadamente 20.16%.
+
+
+#Gráfico sobre a região
+
+```{r}
+data = read.csv2('C:/Users/carol/Documents/Trabalho de Visu/datasets/nascidos_zona_da_feira.csv')
+
+data$Mes = factor(data$Mes,levels = c("Março", "Dezembro"))
+graf3 =ggplot(data, aes(fill=Mes, y=Nascimentos, x=Ano)) + 
+  geom_bar(position="dodge", stat="identity")
+graf3
+```
+
+
+
+#Gráfico de Correlação
+
+
+```{r include=FALSE}
+Mae_Filhos = read.csv('C:/Users/carol/Documents/Trabalho de Visu/datasets/IdadeDaMaeNumeroDeFilhos.csv', na.strings = "-")
+for(i in 1:555){
+  if(is.na(Mae_Filhos$X3.Filhos.ou.Mais[i]) == TRUE){
+    Mae_Filhos$X3.Filhos.ou.Mais[i] = 0
+  }
+}
+
+Mae_Filhos = Mae_Filhos %>% filter(Ano == 2003 | Ano == 2010 | Ano == 2017)
+
+Mae_Filhos$Ano = factor(Mae_Filhos$Ano)
+
+colnames(Mae_Filhos)=c("Ano", "Idade da mãe", "1 Nascido", "2 Nascidos",
+                       "3 Nascidos ou Mais")
+```
+
+```{r}
+head(Mae_Filhos)
+```
+
+
+
+```{r message=FALSE, warning=FALSE}
+Correlacoes = ggpairs(Mae_Filhos, 3:5, mapping = aes(color = Ano),
+                      lower = list( continuous = wrap(ggally_smooth_loess,
+                                                      size = 1, color = "darkblue")),
+                      diag = list(continuous=wrap(ggally_barDiag, color="darkblue")),
+                      upper = list( continuous = wrap("cor", size = 4.0, alignPercent = 1)))
+Correlacoes+ggplot2::theme(panel.background = ggplot2::element_rect(fill = "lightgray")) +
+  labs(title = "Correlações entre os números de nascidos", 
+       subtitle = "(Dadas todas a idades das mães, nos anos de 2003, 2010
+       e 2017)", caption = "Fonte: SIDRA (IBGE)") +
+  theme(plot.title = element_text(hjust = 0.45), 
+        plot.subtitle = element_text(hjust = 0.45))
+```
+
+
+Considerando os anos de 2003, 2010 e 2017, verificou-se a correlação entre os números de nascidos por parto levando em conta todas as idades disponíveis para as mães no Brasil. Sendo assim, como mostram os gráficos, não há uma correlação forte entre 1 e 3 ou mais nascidos por parto, o que indica que tais variáveis possam ser independentes (ou seja, uma não influencia a outra). Entretanto, as correlações entre 1 e 2 nascidos e 2 e 3 ou mais nascidos possuem valores mais próximos de 1, o que indica forte correlação. A partir disso, pode-se interpretar que quando o número de nascimentos de 1 filho por parto aumenta, tende-se a crescer também o número de nascimentos de 2 filhos por parto, e que quando o número de nascimentos de 2 filhos por parto aumenta, tende-se a aumentar também o número de 3 filhos ou mais por parto.
